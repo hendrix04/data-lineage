@@ -23,17 +23,20 @@ FROM python-base as builder-base
 RUN apt-get update \
     && apt-get install --no-install-recommends -y \
         curl gcc python3-dev default-libmysqlclient-dev \
-        build-essential libpq-dev musl-dev
+        build-essential libpq-dev musl-dev python3-venv \
+        libffi-dev git
 
 # Install Poetry - respects $POETRY_VERSION & $POETRY_HOME
 ENV POETRY_VERSION=1.1.6
-RUN curl -sSL https://raw.githubusercontent.com/sdispater/poetry/master/get-poetry.py | python
+RUN python3 -m venv $POETRY_HOME \
+    && $POETRY_HOME/bin/pip install --upgrade pip \
+    && $POETRY_HOME/bin/pip install poetry==${POETRY_VERSION}
 
 # We copy our Python requirements here to cache them
 # and install only runtime deps using poetry
 WORKDIR $PYSETUP_PATH
 COPY ./poetry.lock ./pyproject.toml ./
-RUN poetry install --no-dev  # respects 
+RUN $POETRY_HOME/bin/poetry install --no-dev  # respects 
 
 WORKDIR /src
 COPY . .
